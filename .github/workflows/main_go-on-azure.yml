@@ -1,57 +1,40 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
-name: Build and deploy ASP.Net Core app to Azure Web App - go-on-azure
+name: Build Go app and push to Azure
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
 
 jobs:
+
   build:
     runs-on: windows-latest
-
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
-      - name: Set up .NET Core
-        uses: actions/setup-dotnet@v1
+      - name: Set up Go
+        uses: actions/setup-go@v3
         with:
-          dotnet-version: '6.0.x'
-          include-prerelease: true
+          go-version: 1.18
 
-      - name: Build with dotnet
-        run: dotnet build --configuration Release
+      - name: Copy static template files
+        run: xcopy /i templates build\templates
 
-      - name: dotnet publish
-        run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
+      - name: Copy static public files
+        run: xcopy /i public build\public
 
-      - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v3
+      - name: Build
+        run: go build -o build/go-app.exe -v
+
+      - name: Test
+        run: go test
+
+      - name: Deploy to Azure
+        uses: Azure/webapps-deploy@v2
         with:
-          name: .net-app
-          path: ${{env.DOTNET_ROOT}}/myapp
-
-  deploy:
-    runs-on: windows-latest
-    needs: build
-    environment:
-      name: 'Production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-
-    steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v3
-        with:
-          name: .net-app
-
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: 'go-on-azure'
-          slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_F7D6127AB1A64C1B91E4A08AAAC00D02 }}
-          package: .
+          # Name of the Azure Web App
+          app-name: go-azure-appservice
+          # Applies to Web App only: Path to package or folder. *.zip, *.war, *.jar or a folder to deploy
+          package: build/
+          publish-profile: ${{ secrets.azureWebAppPublishProfile }}
