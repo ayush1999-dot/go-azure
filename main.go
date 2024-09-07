@@ -22,5 +22,6 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
+
 	router.Run("127.0.0.1:8080")
 }
