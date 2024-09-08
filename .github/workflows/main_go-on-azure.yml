@@ -20,6 +20,12 @@ jobs:
       - name: Build
         run: go build -o build/go-app.exe -v
 
+      - name: Copy static template files
+        run: xcopy /i templates build\templates
+
+      - name: Copy static public files
+        run: xcopy /i assets build\public
+
       - name: Deploy to Azure
         uses: Azure/webapps-deploy@v2
         with:
